@@ -29,12 +29,12 @@ export async function getObject(
       id: objectId,
       options: {
         showContent: true,
-        showDisplay: true,
-        showBcs: true,
-        showOwner: true,
-        showPreviousTransaction: true,
-        showStorageRebate: true,
-        showType: true,
+        showDisplay: false,
+        showBcs: false,
+        showOwner: false,
+        showPreviousTransaction: false,
+        showStorageRebate: false,
+        showType: false,
         ...options,
       },
     });

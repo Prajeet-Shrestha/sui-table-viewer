@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from "react";
-import { getTableData } from "./sui/client";
+import { getTableData, getObject } from "./sui/client";
 import ReactJson from "react-json-view";
 import "./TableViewer.css";
 
 const TABLE_ID = "0x8c10e863b2714f1bfc9a0660ec7a7a590b2c5400427f0fa815bc5eff84a27be6";
+// const TABLE_ID = "0xc94f863bddb48d0770874c3feff39b913437cfa54c8c0f4b07d546c41b8f07ef";
 
 interface TableEntry {
   key: any;
@@ -36,6 +37,10 @@ const TableViewer: React.FC = () => {
   const [hasNextPage, setHasNextPage] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
   const [previousCursors, setPreviousCursors] = useState<string[]>([]);
+
+  // Object data state
+  const [fetchedObjects, setFetchedObjects] = useState<Record<string, any>>({});
+  const [loadingObjects, setLoadingObjects] = useState<Set<string>>(new Set());
 
   const fetchTableData = async (tableId?: string, page: number = 1, cursor?: string) => {
     setLoading(true);
@@ -111,7 +116,88 @@ const TableViewer: React.FC = () => {
     fetchTableData();
   };
 
+  // Check if a value is an object ID (Sui object IDs start with 0x and are 66 characters long)
+  const isObjectId = (value: any): boolean => {
+    return typeof value === "string" && value.startsWith("0x") && value.length === 66 && /^[0-9a-fA-F]+$/.test(value.slice(2));
+  };
+
+  // Fetch object data by ID
+  const fetchObjectData = async (objectId: string) => {
+    if (fetchedObjects[objectId] || loadingObjects.has(objectId)) {
+      return; // Already fetched or currently loading
+    }
+
+    setLoadingObjects((prev) => new Set(prev).add(objectId));
+
+    try {
+      const objectData = await getObject(objectId);
+      if (objectData) {
+        setFetchedObjects((prev) => ({
+          ...prev,
+          [objectId]: objectData,
+        }));
+      }
+    } catch (error) {
+      console.error(`Failed to fetch object ${objectId}:`, error);
+      // Store error state
+      setFetchedObjects((prev) => ({
+        ...prev,
+        [objectId]: { error: "Failed to fetch object data" },
+      }));
+    } finally {
+      setLoadingObjects((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(objectId);
+        return newSet;
+      });
+    }
+  };
+
   const formatValue = (value: any) => {
+    // Check if value is an object ID
+    if (isObjectId(value)) {
+      const objectId = value as string;
+      const isLoading = loadingObjects.has(objectId);
+      const fetchedData = fetchedObjects[objectId];
+
+      return (
+        <div className='object-id-container'>
+          <div className='object-id-header'>
+            <span className='object-id-label'>Object ID:</span>
+            <span className='object-id-value'>{objectId}</span>
+            {!fetchedData && !isLoading && (
+              <button onClick={() => fetchObjectData(objectId)} className='fetch-object-button'>
+                Fetch Data
+              </button>
+            )}
+          </div>
+
+          {isLoading && <div className='object-loading'>Loading object data...</div>}
+
+          {fetchedData && !fetchedData.error && (
+            <div className='pretty-json-container'>
+              <div className='object-container'>
+                <ReactJson
+                  src={fetchedData}
+                  collapsed={false}
+                  theme={"solarized"}
+                  enableClipboard={false}
+                  style={{
+                    backgroundColor: "transparent",
+                    fontSize: "12px",
+                    fontFamily: "monospace",
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
+          {fetchedData && fetchedData.error && <div className='object-error'>Error: {fetchedData.error}</div>}
+        </div>
+      );
+    }
+
+    // Handle regular objects
     if (typeof value === "object" && value !== null) {
       return (
         <div className='pretty-json-container'>
@@ -120,8 +206,6 @@ const TableViewer: React.FC = () => {
               src={value}
               collapsed={false}
               theme={"solarized"}
-              // displayDataTypes={false}
-              // displayObjectSize={false}
               enableClipboard={false}
               style={{
                 backgroundColor: "transparent",
@@ -133,6 +217,7 @@ const TableViewer: React.FC = () => {
         </div>
       );
     }
+
     return <span>{String(value)}</span>;
   };
 
@@ -204,22 +289,39 @@ const TableViewer: React.FC = () => {
             Page {currentPage} {hasNextPage && `• More pages available`}
           </div>
         </div>
+
+        {/* Top Pagination Controls */}
+        {(currentPage > 1 || hasNextPage) && (
+          <div className='pagination-controls pagination-top'>
+            <button onClick={goToFirstPage} disabled={currentPage === 1} className='pagination-button'>
+              First
+            </button>
+            <button onClick={goToPreviousPage} disabled={currentPage === 1} className='pagination-button'>
+              Previous
+            </button>
+            <span className='pagination-page'>Page {currentPage}</span>
+            <button onClick={goToNextPage} disabled={!hasNextPage} className='pagination-button'>
+              Next
+            </button>
+          </div>
+        )}
+
         {tableData.length === 0 ? (
           <p style={{ color: "#6c757d", fontStyle: "italic", textAlign: "center", padding: "2rem" }}>No data found in table</p>
         ) : (
           <div className='table-container'>
             {tableData.map((entry) => (
               <div key={entry.objectId} className='table-entry'>
-                <div className='object-id'>{entry.objectId}</div>
+                <div className='object-id'>{formatValue(entry.objectId)}</div>
                 <div className='value-cell'>{formatValue(entry.value)}</div>
               </div>
             ))}
           </div>
         )}
 
-        {/* Pagination Controls */}
+        {/* Bottom Pagination Controls */}
         {(currentPage > 1 || hasNextPage) && (
-          <div className='pagination-controls'>
+          <div className='pagination-controls pagination-bottom'>
             <button onClick={goToFirstPage} disabled={currentPage === 1} className='pagination-button'>
               First
             </button>
