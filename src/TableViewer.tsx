@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { getTableData, getObject } from "./sui/client";
 import ReactJson from "react-json-view";
 import "./TableViewer.css";
@@ -26,11 +27,15 @@ interface TableMetadata {
 }
 
 const TableViewer: React.FC = () => {
+  const { tableId } = useParams<{ tableId: string }>();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
   const [metadata] = useState<TableMetadata | null>(null);
   const [tableData, setTableData] = useState<TableEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [customTableId] = useState(TABLE_ID);
+  const [customTableId] = useState(tableId || TABLE_ID);
+  const [currentNetwork] = useState(searchParams.get("network") || "mainnet");
 
   // Pagination state
   const [currentPage, setCurrentPage] = useState(1);
@@ -253,7 +258,17 @@ const TableViewer: React.FC = () => {
 
   return (
     <div className='main-container'>
-      <h1>Sui Table Viewer</h1>
+      <div className='header-section'>
+        <button onClick={() => navigate("/")} className='back-button'>
+          ← Back to Search
+        </button>
+        <h1>Sui Table Viewer</h1>
+        <div className='table-id-display'>
+          <span className='table-id-label'>Table ID:</span>
+          <span className='table-id-value'>{customTableId}</span>
+          <span className='network-display'>Network: {currentNetwork}</span>
+        </div>
+      </div>
 
       {metadata && (
         <div className='metadata-section'>
