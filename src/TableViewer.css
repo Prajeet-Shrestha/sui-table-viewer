@@ -1,0 +1,296 @@
+/* TableViewer Component Styles */
+
+/* Loading State */
+.loading-container {
+  padding: 20px;
+  text-align: center;
+}
+
+/* Error State */
+.error-container {
+  padding: 20px;
+  color: red;
+}
+
+.error-message {
+  background-color: #ffe6e6;
+  border: 1px solid #ff9999;
+  border-radius: 5px;
+  padding: 15px;
+  margin-bottom: 20px;
+  white-space: pre-line;
+  font-family: monospace;
+}
+
+.error-solutions {
+  margin-bottom: 20px;
+}
+
+.error-solutions h3 {
+  margin-bottom: 10px;
+}
+
+.error-solutions ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.error-solutions li {
+  margin-bottom: 5px;
+}
+
+.retry-button {
+  margin-top: 10px;
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+/* Main Container */
+.main-container {
+  padding: 20px;
+  font-family: monospace;
+}
+
+.main-container h1 {
+  margin-bottom: 20px;
+}
+
+/* Object ID Input Section */
+.input-section {
+  margin-bottom: 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border: 1px solid #dee2e6;
+  border-radius: 5px;
+}
+
+.input-section h3 {
+  margin-bottom: 15px;
+}
+
+.checkbox-container {
+  margin-bottom: 10px;
+}
+
+.checkbox-container label {
+  display: block;
+  margin-bottom: 5px;
+}
+
+.checkbox-container input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.custom-input-container {
+  margin-top: 10px;
+}
+
+.custom-input {
+  width: 100%;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 14px;
+}
+
+.fetch-button {
+  margin-top: 10px;
+  padding: 8px 16px;
+  background-color: #28a745;
+  color: white;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.fetch-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.default-table-info {
+  margin-top: 15px;
+}
+
+.default-table-info p {
+  margin-bottom: 10px;
+}
+
+.default-table-info strong {
+  font-weight: bold;
+}
+
+.default-table-info .warning-text {
+  color: #666;
+  font-size: 14px;
+}
+
+.example-info {
+  font-size: 12px;
+  color: #666;
+}
+
+.example-info p {
+  margin-bottom: 5px;
+}
+
+.example-info code {
+  background-color: #f1f1f1;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-family: monospace;
+}
+
+/* Metadata Section */
+.metadata-section {
+  margin-bottom: 30px;
+  padding: 15px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+}
+
+.metadata-section h2 {
+  margin-bottom: 15px;
+}
+
+.metadata-section p {
+  margin-bottom: 10px;
+}
+
+.metadata-section strong {
+  font-weight: bold;
+}
+
+/* Table Data Section */
+.table-section h2 {
+  margin-bottom: 15px;
+}
+
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  border-collapse: collapse;
+  width: 100%;
+  border: 1px solid #ccc;
+}
+
+.data-table thead tr {
+  background-color: #f5f5f5;
+}
+
+.data-table th,
+.data-table td {
+  border: 1px solid #ccc;
+  padding: 8px;
+}
+
+.data-table th {
+  font-weight: bold;
+}
+
+.data-table td.object-id {
+  font-size: 12px;
+}
+
+.data-table td.value-cell {
+  max-width: 500px;
+  overflow: auto;
+  vertical-align: top;
+  text-align: left;
+}
+
+.data-table pre {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* React JSON View styling */
+.data-table .react-json-view {
+  margin: 0;
+  font-size: 12px;
+  font-family: monospace;
+  background-color: transparent !important;
+  border: none;
+  padding: 0;
+  text-align: left;
+}
+
+.pretty-json-container {
+  text-align: left;
+}
+
+.object-container {
+  text-align: left;
+}
+
+.data-table .react-json-view .string-value {
+  word-break: break-all;
+  white-space: pre-wrap;
+}
+
+.data-table .react-json-view .object-key {
+  font-weight: bold;
+}
+
+.data-table .react-json-view .icon-container {
+  margin-right: 4px;
+}
+
+.data-table .react-json-view .expanded-icon {
+  color: #666;
+}
+
+.data-table .react-json-view .collapsed-icon {
+  color: #666;
+}
+
+/* Ensure JSON viewer doesn't break table layout */
+.data-table .react-json-view > * {
+  max-width: 100%;
+  overflow: hidden;
+}
+
+/* Refresh Button */
+.refresh-section {
+  margin-top: 20px;
+}
+
+.refresh-button {
+  padding: 10px 20px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+.refresh-button:hover {
+  background-color: #0056b3;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .main-container {
+    padding: 10px;
+  }
+
+  .input-section {
+    padding: 10px;
+  }
+
+  .data-table {
+    font-size: 12px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 4px;
+  }
+}
