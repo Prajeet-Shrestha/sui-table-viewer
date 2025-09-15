@@ -67,10 +67,10 @@ async function viewTable(): Promise<void> {
 
     // Get table data
     console.log("\n📊 Fetching table data...");
-    const tableData = await getTableData(TABLE_ID, { limit: 100 });
-    formatTableData(tableData);
+    const tableResult = await getTableData(TABLE_ID, "mainnet", { limit: 100 });
+    formatTableData(tableResult.data);
 
-    console.log(`\n✅ Successfully fetched ${tableData.length} entries from table`);
+    console.log(`\n✅ Successfully fetched ${tableResult.data.length} entries from table`);
   } catch (error) {
     console.error("❌ Error viewing table:", error);
     process.exit(1);
