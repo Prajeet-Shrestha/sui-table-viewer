@@ -3,6 +3,9 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
+  "license": "MIT",
+  "author": "Sui Table Explorer",
+  "description": "A powerful web application for exploring Sui blockchain table and object data",
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
