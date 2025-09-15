@@ -1,18 +1,49 @@
-import { SuiClient, getFullnodeUrl, type SuiObjectData } from "@mysten/sui/client";
+import { SuiClient, type SuiObjectData } from "@mysten/sui/client";
 
-// Sui mainnet RPC client
-export const suiClient = new SuiClient({
-  url: getFullnodeUrl("mainnet"),
-});
+// Network configuration
+const NETWORK_URLS = {
+  mainnet: "https://fullnode.mainnet.sui.io:443",
+  testnet: "https://fullnode.testnet.sui.io:443",
+  devnet: "https://fullnode.devnet.sui.io:443",
+};
+
+// Cache for Sui clients
+const clientCache = new Map<string, SuiClient>();
+
+/**
+ * Get Sui client for the specified network
+ * @param network - The network to connect to (mainnet, testnet, devnet)
+ * @returns SuiClient instance for the specified network
+ */
+export function getSuiClient(network: string = "mainnet"): SuiClient {
+  // Use cached client if available
+  if (clientCache.has(network)) {
+    return clientCache.get(network)!;
+  }
+
+  // Create new client for the network
+  const url = NETWORK_URLS[network as keyof typeof NETWORK_URLS] || NETWORK_URLS.mainnet;
+  const client = new SuiClient({ url });
+
+  // Cache the client
+  clientCache.set(network, client);
+
+  return client;
+}
+
+// Default mainnet client for backward compatibility
+export const suiClient = getSuiClient("mainnet");
 
 /**
  * Get a single object by its ID
  * @param objectId - The object ID to fetch
+ * @param network - The network to connect to (mainnet, testnet, devnet)
  * @param options - Additional options for the request
  * @returns Promise<SuiObjectData | null>
  */
 export async function getObject(
   objectId: string,
+  network: string = "mainnet",
   options?: {
     showContent?: boolean;
     showDisplay?: boolean;
@@ -24,8 +55,9 @@ export async function getObject(
   }
 ): Promise<SuiObjectData | null> {
   try {
-    console.log(`🔍 Fetching object: ${objectId}`);
-    const result = await suiClient.getObject({
+    const client = getSuiClient(network);
+    console.log(`🔍 Fetching object: ${objectId} from ${network}`);
+    const result = await client.getObject({
       id: objectId,
       options: {
         showContent: true,
@@ -61,11 +93,13 @@ export async function getObject(
 /**
  * Get multiple objects by their IDs
  * @param objectIds - Array of object IDs to fetch
+ * @param network - The network to connect to (mainnet, testnet, devnet)
  * @param options - Additional options for the request
  * @returns Promise<SuiObjectData[]>
  */
 export async function getObjects(
   objectIds: string[],
+  network: string = "mainnet",
   options?: {
     showContent?: boolean;
     showDisplay?: boolean;
@@ -77,7 +111,8 @@ export async function getObjects(
   }
 ): Promise<SuiObjectData[]> {
   try {
-    const results = await suiClient.multiGetObjects({
+    const client = getSuiClient(network);
+    const results = await client.multiGetObjects({
       ids: objectIds,
       options: {
         showContent: true,
@@ -101,19 +136,22 @@ export async function getObjects(
 /**
  * Get table data by table ID with pagination support
  * @param tableId - The table ID to fetch data from
+ * @param network - The network to connect to (mainnet, testnet, devnet)
  * @param options - Additional options for the request
  * @returns Promise<{data: any[], hasNextPage: boolean, nextCursor?: string}>
  */
 export async function getTableData(
   tableId: string,
+  network: string = "mainnet",
   options?: {
     limit?: number;
     cursor?: string;
   }
 ): Promise<{ data: any[]; hasNextPage: boolean; nextCursor?: string }> {
   try {
-    console.log(`🔍 Getting table data for: ${tableId}`);
-    const result = await suiClient.getDynamicFields({
+    const client = getSuiClient(network);
+    console.log(`🔍 Getting table data for: ${tableId} from ${network}`);
+    const result = await client.getDynamicFields({
       parentId: tableId,
       limit: options?.limit || 50,
       cursor: options?.cursor,
@@ -124,7 +162,7 @@ export async function getTableData(
 
     // Get the actual data for each dynamic field
     const fieldIds = result.data.map((field) => field.objectId);
-    const fieldObjects = await getObjects(fieldIds);
+    const fieldObjects = await getObjects(fieldIds, network);
 
     const data = fieldObjects.map((obj) => {
       if (obj.content && "fields" in obj.content) {

@@ -59,7 +59,7 @@ const TableViewer: React.FC = () => {
       // setMetadata(meta);
 
       // Fetch table data with pagination
-      const result = await getTableData(targetTableId, {
+      const result = await getTableData(targetTableId, currentNetwork, {
         limit: 50,
         cursor: cursor,
       });
@@ -95,6 +95,20 @@ const TableViewer: React.FC = () => {
     setHasNextPage(false);
     fetchTableData();
   }, []);
+
+  // Refetch data when network changes
+  useEffect(() => {
+    if (currentNetwork) {
+      // Reset pagination and clear fetched objects when network changes
+      setCurrentPage(1);
+      setPreviousCursors([]);
+      setNextCursor(undefined);
+      setHasNextPage(false);
+      setFetchedObjects({});
+      setLoadingObjects(new Set());
+      fetchTableData();
+    }
+  }, [currentNetwork]);
 
   const goToNextPage = () => {
     if (hasNextPage && nextCursor) {
@@ -135,7 +149,7 @@ const TableViewer: React.FC = () => {
     setLoadingObjects((prev) => new Set(prev).add(objectId));
 
     try {
-      const objectData = await getObject(objectId);
+      const objectData = await getObject(objectId, currentNetwork);
       if (objectData) {
         setFetchedObjects((prev) => ({
           ...prev,

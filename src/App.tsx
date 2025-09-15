@@ -16,17 +16,33 @@ const GlobalHeader = () => {
   ];
 
   const handleNetworkChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    setSelectedNetwork(e.target.value);
+    const newNetwork = e.target.value;
+    setSelectedNetwork(newNetwork);
+
+    // Save to localStorage
+    localStorage.setItem("sui-network", newNetwork);
+
     // Update URL with new network parameter
     const currentPath = window.location.pathname;
-    const newUrl = `${currentPath}?network=${e.target.value}`;
+    const newUrl = `${currentPath}?network=${newNetwork}`;
     window.history.replaceState({}, "", newUrl);
   };
 
-  // Initialize network from URL on mount
+  // Initialize network from localStorage or URL on mount
   useEffect(() => {
-    const networkFromUrl = searchParams.get("network") || "mainnet";
-    setSelectedNetwork(networkFromUrl);
+    // First check localStorage, then URL, then default to mainnet
+    const savedNetwork = localStorage.getItem("sui-network");
+    const networkFromUrl = searchParams.get("network");
+    const initialNetwork = savedNetwork || networkFromUrl || "mainnet";
+
+    setSelectedNetwork(initialNetwork);
+
+    // If we got network from localStorage and URL is different, update URL
+    if (savedNetwork && networkFromUrl && savedNetwork !== networkFromUrl) {
+      const currentPath = window.location.pathname;
+      const newUrl = `${currentPath}?network=${savedNetwork}`;
+      window.history.replaceState({}, "", newUrl);
+    }
   }, [searchParams]);
 
   return (

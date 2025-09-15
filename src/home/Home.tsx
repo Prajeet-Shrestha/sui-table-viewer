@@ -1,22 +1,32 @@
-import React, { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import "./home.css";
 
 const Home: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentNetwork, setCurrentNetwork] = useState("mainnet");
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+
+  // Get current network from URL or localStorage
+  useEffect(() => {
+    const networkFromUrl = searchParams.get("network");
+    const networkFromStorage = localStorage.getItem("sui-network");
+    const network = networkFromUrl || networkFromStorage || "mainnet";
+    setCurrentNetwork(network);
+  }, [searchParams]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     if (searchQuery.trim()) {
-      // Navigate to table viewer with the search query
-      navigate(`/table/${encodeURIComponent(searchQuery.trim())}`);
+      // Navigate to table viewer with the search query and current network
+      navigate(`/table/${encodeURIComponent(searchQuery.trim())}?network=${currentNetwork}`);
     }
   };
 
   const handleExampleClick = (exampleId: string) => {
     setSearchQuery(exampleId);
-    navigate(`/table/${encodeURIComponent(exampleId)}`);
+    navigate(`/table/${encodeURIComponent(exampleId)}?network=${currentNetwork}`);
   };
 
   return (
@@ -24,7 +34,7 @@ const Home: React.FC = () => {
       <div className='home-content'>
         <div className='logo-section'>
           <h1 className='logo'>Sui Table Explorer</h1>
-          <p className='tagline'>Explore Sui blockchain table objects</p>
+          <p className='tagline'>Explore Sui blockchain table/bag objects</p>
         </div>
 
         <div className='search-section'>
