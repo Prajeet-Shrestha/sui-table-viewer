@@ -3,7 +3,7 @@ import { getTableData } from "./sui/client";
 import ReactJson from "react-json-view";
 import "./TableViewer.css";
 
-const TABLE_ID = "0xc94f863bddb48d0770874c3feff39b913437cfa54c8c0f4b07d546c41b8f07ef";
+const TABLE_ID = "0x8c10e863b2714f1bfc9a0660ec7a7a590b2c5400427f0fa815bc5eff84a27be6";
 
 interface TableEntry {
   key: any;
@@ -29,10 +29,15 @@ const TableViewer: React.FC = () => {
   const [tableData, setTableData] = useState<TableEntry[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [customTableId, setCustomTableId] = useState(TABLE_ID);
-  const [useCustomId, setUseCustomId] = useState(false);
+  const [customTableId] = useState(TABLE_ID);
 
-  const fetchTableData = async (tableId?: string) => {
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasNextPage, setHasNextPage] = useState(false);
+  const [nextCursor, setNextCursor] = useState<string | undefined>(undefined);
+  const [previousCursors, setPreviousCursors] = useState<string[]>([]);
+
+  const fetchTableData = async (tableId?: string, page: number = 1, cursor?: string) => {
     setLoading(true);
     setError(null);
 
@@ -43,9 +48,16 @@ const TableViewer: React.FC = () => {
       // const meta = await getTableMetadata(targetTableId);
       // setMetadata(meta);
 
-      // Fetch table data
-      const data = await getTableData(targetTableId, { limit: 100 });
-      setTableData(data);
+      // Fetch table data with pagination
+      const result = await getTableData(targetTableId, {
+        limit: 50,
+        cursor: cursor,
+      });
+
+      setTableData(result.data);
+      setHasNextPage(result.hasNextPage);
+      setNextCursor(result.nextCursor);
+      setCurrentPage(page);
     } catch (err) {
       let errorMessage = "Unknown error occurred";
 
@@ -66,8 +78,38 @@ const TableViewer: React.FC = () => {
   };
 
   useEffect(() => {
+    // Reset pagination when component mounts
+    setCurrentPage(1);
+    setPreviousCursors([]);
+    setNextCursor(undefined);
+    setHasNextPage(false);
     fetchTableData();
   }, []);
+
+  const goToNextPage = () => {
+    if (hasNextPage && nextCursor) {
+      // Save current cursor for back navigation
+      setPreviousCursors((prev) => [...prev, nextCursor]);
+      fetchTableData(undefined, currentPage + 1, nextCursor);
+    }
+  };
+
+  const goToPreviousPage = () => {
+    if (currentPage > 1 && previousCursors.length > 0) {
+      const newCursors = [...previousCursors];
+      const previousCursor = newCursors.pop();
+      setPreviousCursors(newCursors);
+      fetchTableData(undefined, currentPage - 1, previousCursor);
+    }
+  };
+
+  const goToFirstPage = () => {
+    setCurrentPage(1);
+    setPreviousCursors([]);
+    setNextCursor(undefined);
+    setHasNextPage(false);
+    fetchTableData();
+  };
 
   const formatValue = (value: any) => {
     if (typeof value === "object" && value !== null) {
@@ -76,10 +118,10 @@ const TableViewer: React.FC = () => {
           <div className='object-container'>
             <ReactJson
               src={value}
-              theme='monokai'
-              collapsed={1}
-              displayDataTypes={false}
-              displayObjectSize={false}
+              collapsed={false}
+              theme={"solarized"}
+              // displayDataTypes={false}
+              // displayObjectSize={false}
               enableClipboard={false}
               style={{
                 backgroundColor: "transparent",
@@ -98,7 +140,7 @@ const TableViewer: React.FC = () => {
     return (
       <div className='loading-container'>
         <h2>Loading table data...</h2>
-        <p>Table ID: {TABLE_ID}</p>
+        <p>Table ID: {customTableId}</p>
       </div>
     );
   }
@@ -118,7 +160,7 @@ const TableViewer: React.FC = () => {
           </ul>
         </div>
         <button onClick={() => fetchTableData()} className='retry-button'>
-          🔄 Retry
+          Retry
         </button>
       </div>
     );
@@ -126,7 +168,7 @@ const TableViewer: React.FC = () => {
 
   return (
     <div className='main-container'>
-      <h1>🔍 Sui Table Viewer</h1>
+      <h1>Sui Table Viewer</h1>
 
       {metadata && (
         <div className='metadata-section'>
@@ -156,29 +198,38 @@ const TableViewer: React.FC = () => {
       )}
 
       <div className='table-section'>
-        <h2>Table Data ({tableData.length} entries)</h2>
+        <div className='table-header'>
+          <h2>Table Data ({tableData.length} entries)</h2>
+          <div className='pagination-info'>
+            Page {currentPage} {hasNextPage && `• More pages available`}
+          </div>
+        </div>
         {tableData.length === 0 ? (
-          <p>No data found in table</p>
+          <p style={{ color: "#6c757d", fontStyle: "italic", textAlign: "center", padding: "2rem" }}>No data found in table</p>
         ) : (
           <div className='table-container'>
-            <table className='data-table'>
-              <thead>
-                <tr>
-                  <th>#</th>
-                  <th>Object ID</th>
-                  <th>Value</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tableData.map((entry, index) => (
-                  <tr key={entry.objectId}>
-                    <td>{index + 1}</td>
-                    <td className='object-id'>{entry.objectId}</td>
-                    <td className='value-cell'>{formatValue(entry.value)}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+            {tableData.map((entry) => (
+              <div key={entry.objectId} className='table-entry'>
+                <div className='object-id'>{entry.objectId}</div>
+                <div className='value-cell'>{formatValue(entry.value)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* Pagination Controls */}
+        {(currentPage > 1 || hasNextPage) && (
+          <div className='pagination-controls'>
+            <button onClick={goToFirstPage} disabled={currentPage === 1} className='pagination-button'>
+              First
+            </button>
+            <button onClick={goToPreviousPage} disabled={currentPage === 1} className='pagination-button'>
+              Previous
+            </button>
+            <span className='pagination-page'>Page {currentPage}</span>
+            <button onClick={goToNextPage} disabled={!hasNextPage} className='pagination-button'>
+              Next
+            </button>
           </div>
         )}
       </div>

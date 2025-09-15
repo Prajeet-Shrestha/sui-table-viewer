@@ -99,10 +99,10 @@ export async function getObjects(
 }
 
 /**
- * Get table data by table ID
+ * Get table data by table ID with pagination support
  * @param tableId - The table ID to fetch data from
  * @param options - Additional options for the request
- * @returns Promise<any[]>
+ * @returns Promise<{data: any[], hasNextPage: boolean, nextCursor?: string}>
  */
 export async function getTableData(
   tableId: string,
@@ -110,12 +110,12 @@ export async function getTableData(
     limit?: number;
     cursor?: string;
   }
-): Promise<any[]> {
+): Promise<{ data: any[]; hasNextPage: boolean; nextCursor?: string }> {
   try {
     console.log(`🔍 Getting table data for: ${tableId}`);
     const result = await suiClient.getDynamicFields({
       parentId: tableId,
-      limit: 50,
+      limit: options?.limit || 50,
       cursor: options?.cursor,
     });
     console.log(`✅ Table data fetched successfully:`, {
@@ -126,7 +126,7 @@ export async function getTableData(
     const fieldIds = result.data.map((field) => field.objectId);
     const fieldObjects = await getObjects(fieldIds);
 
-    return fieldObjects.map((obj) => {
+    const data = fieldObjects.map((obj) => {
       if (obj.content && "fields" in obj.content) {
         const fields = obj.content.fields as any;
         return {
@@ -139,6 +139,12 @@ export async function getTableData(
       }
       return obj;
     });
+
+    return {
+      data,
+      hasNextPage: result.hasNextPage,
+      nextCursor: result.nextCursor || undefined,
+    };
   } catch (error) {
     console.error("Failed to get table data:", error);
     throw error;
@@ -169,7 +175,7 @@ export async function testObject(objectId: string): Promise<{ exists: boolean; t
 
     return {
       exists: true,
-      type: result.data?.type,
+      type: result.data?.type || undefined,
     };
   } catch (error) {
     return {
